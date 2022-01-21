@@ -86,10 +86,10 @@ for i = 1:N-1
         j(i) = -j_max;
         a(i) = -j_max*(t(i)-t2) + a_max;
         v(i) = -j_max/2*(t(i)-t2)^2 + a_max*(t(i)-t2) + v_t2;
-        p(i) = -j_max/6*(t(i)-t2)^3 + a_max*(t(i)-t2)^2 + v_t2*(t(i)-t2) + p_t2;
+        p(i) = -j_max/6*(t(i)-t2)^3 + a_max/2*(t(i)-t2)^2 + v_t2*(t(i)-t2) + p_t2;
         
         v_t3 = -j_max/2*(t3-t2)^2 + a_max*(t3-t2) + v_t2;
-        p_t3 = -j_max/6*(t3-t2)^3 + a_max*(t3-t2)^2 + v_t2*(t3-t2) + p_t2;
+        p_t3 = -j_max/6*(t3-t2)^3 + a_max/2*(t3-t2)^2 + v_t2*(t3-t2) + p_t2;
         
         psi(i) = 0;
         r(1,i+1) = r(1,i)+v(i)*cos(psi(i))*dt;
@@ -107,6 +107,7 @@ for i = 1:N-1
         p(i) = p_t3+v_max*(t(i)-t3);
         
         p_vel = p_t3+v_max*(t_stop_start-t3);
+        p_vel = goal_distance - p_t3;
         
         alpha = pi/2/50;
         psi(i) = alpha*(t(i)-t3);
