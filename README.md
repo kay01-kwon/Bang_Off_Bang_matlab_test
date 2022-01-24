@@ -2,3 +2,5 @@
 
 Triple Integral Planner Test
 
+
+<img src="Bang_Bang.png" width="680" height="480" />
