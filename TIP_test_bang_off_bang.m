@@ -2,7 +2,7 @@ clear all;
 close all;
 
 dt = 0.02;
-tf = 10;
+tf = 300;
 t = 0:dt:tf;
 
 N = length(t);
@@ -46,6 +46,11 @@ t6 = t5+t01;
 
 R_c = 20;
 psi_rate = v_max/R_c;
+
+d1 = 20;
+d2 = d1 + R_c*pi;
+d3 = d2 + d1;
+d4 = d3 + R_c*pi;
 
 for i = 1:N
     
@@ -154,23 +159,35 @@ for i = 1:N
         p(i) = p_t6;
     end
     
-    if p(i) >= 20 && p(i) <= R_c*pi + 20
+    if p(i) >= d1 && p(i) <= d2
         t_ref = (20 - p_t3)/v_max + t3;
-         psi(i) = psi_rate*(t(i)-t_ref);
-        if psi(i) >= pi
-            psi(i) = pi;
-        end
+        psi(i) = psi_rate*(t(i)-t_ref);
         
         r(1,i) = v_max/psi_rate*sin(psi(i))+20;
         r(2,i) = -v_max/psi_rate*(cos(psi(i))-1);
         
-        r_end11 = v_max/psi_rate*sin(pi) + 20; 
-    elseif p(i) >= R_c*pi + 20
+    elseif p(i) >= d2 && p(i) < d3
         psi(i) = pi;
-        r(1,i) = r_end11 - (p(i) - R_c*pi - 20);
+        r(1,i) = 20 - (p(i) - R_c*pi - 20);
         r(2,i) = R_c*2;
-    end
         
+        r1_end = 20 - (d3 - R_c*pi -20);
+        r2_end = R_c*2; 
+        
+    elseif p(i) >=  d3 && p(i) < d4
+        t_ref2 = (d3 - p_t3)/v_max + t3;
+        psi(i) = psi_rate*(t(i)-t_ref2) + pi;
+        
+        r(1,i) =  v_max/psi_rate*sin(psi(i));
+        r(2,i) = -v_max/psi_rate*(cos(psi(i))-1);
+        
+    elseif p(i) >= d4
+        t_ref3 = (d4-p_t3)/v_max + t3;
+        psi(i) = 2*pi;
+        
+        r(1,i) = p(i) - d4;
+        r(2,i) = 0;
+    end
     
 end
 
@@ -212,6 +229,8 @@ ylabel('m')
 figure(2)
 plot(r(1,:),r(2,:))
 title('x - y')
+xlabel('x (m)')
+ylabel('y (m)')
 figure(3)
 subplot(2,2,1)
 plot(t,r(1,:))
