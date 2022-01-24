@@ -1,8 +1,8 @@
 clear all;
 close all;
 
-dt = 0.001;
-tf = 300;
+dt = 0.02;
+tf = 10;
 t = 0:dt:tf;
 
 N = length(t);
@@ -36,7 +36,7 @@ t_vel_max = 2*t01 + t02;
 p_t3 = j_max/2*t01^2+(j_max*t01*t02+1/2*j_max*t01^2)*t01+j_max*t01/2*(t01+t02)*t02;
 
 
-goal_distance = 100;
+goal_distance = 500;
 
 
 t_stop_start = t3 + (goal_distance - 2*p_t3)/v_max;
@@ -44,7 +44,10 @@ t4 = t_stop_start +t01;
 t5 = t4+t02;
 t6 = t5+t01;
 
-for i = 1:N-1
+R_c = 20;
+psi_rate = v_max/R_c;
+
+for i = 1:N
     
     if t(i)>=0 && t(i)<t1
         j(i) = j_max;
@@ -56,8 +59,8 @@ for i = 1:N-1
         
         
         psi(i) = 0;
-        r(1,i+1) = r(1,i)+v(i)*cos(psi(i))*dt;
-        r(2,i+1) = r(2,i)+v(i)*sin(psi(i))*dt;
+        r(1,i) = p(i);
+        r(2,i) = 0;
         
         j_sum(i) = j_max;
         a_sum(i+1) = a_sum(i) + j_sum(i)*dt;
@@ -74,8 +77,8 @@ for i = 1:N-1
         p_t2 = a_max/2*(t2-t1)^2 + v_t1*(t2-t1) + p_t1;
         
         psi(i) = 0;
-        r(1,i+1) = r(1,i)+v(i)*cos(psi(i))*dt;
-        r(2,i+1) = r(2,i)+v(i)*sin(psi(i))*dt;
+        r(1,i) = p(i);
+        r(2,i) = 0;
         
         j_sum(i) = 0;
         a_sum(i+1) = a_sum(i) + j_sum(i)*dt;
@@ -92,8 +95,8 @@ for i = 1:N-1
         p_t3 = -j_max/6*(t3-t2)^3 + a_max/2*(t3-t2)^2 + v_t2*(t3-t2) + p_t2;
         
         psi(i) = 0;
-        r(1,i+1) = r(1,i)+v(i)*cos(psi(i))*dt;
-        r(2,i+1) = r(2,i)+v(i)*sin(psi(i))*dt;
+        r(1,i) = p(i);
+        r(2,i) = 0;
         
         j_sum(i) = -j_max;
         a_sum(i+1) = a_sum(i) + j_sum(i)*dt;
@@ -109,21 +112,13 @@ for i = 1:N-1
         p_vel = p_t3+v_max*(t_stop_start-t3);
         p_vel = goal_distance - p_t3;
         
-        alpha = pi/2/50;
-        psi(i) = alpha*(t(i)-t3);
-        if psi(i) >= pi
-            psi(i) = pi;
-        end
-        r(1,i+1) = r(1,i)+v(i)*cos(psi(i))*dt;
-        r(2,i+1) = r(2,i)+v(i)*sin(psi(i))*dt;
-        
-        r(1,i) = v(i)/alpha*sin(psi(i))+p_t3;
-        r(2,i) = -v(i)/alpha*(cos(psi(i))-1);
-        
         j_sum(i) = 0;
         a_sum(i+1) = a_sum(i) + j_sum(i)*dt;
         v_sum(i+1) = v_sum(i) + a_sum(i)*dt;
         p_sum(i+1) = p_sum(i) + v_sum(i)*dt;
+        
+        r(1,i) = p(i);
+        r(2,i) = 0;
     end
     
     
@@ -158,10 +153,27 @@ for i = 1:N-1
         v(i) = 0;
         p(i) = p_t6;
     end
+    
+    if p(i) >= 20 && p(i) <= R_c*pi + 20
+        t_ref = (20 - p_t3)/v_max + t3;
+         psi(i) = psi_rate*(t(i)-t_ref);
+        if psi(i) >= pi
+            psi(i) = pi;
+        end
+        
+        r(1,i) = v_max/psi_rate*sin(psi(i))+20;
+        r(2,i) = -v_max/psi_rate*(cos(psi(i))-1);
+        
+        r_end11 = v_max/psi_rate*sin(pi) + 20; 
+    elseif p(i) >= R_c*pi + 20
+        psi(i) = pi;
+        r(1,i) = r_end11 - (p(i) - R_c*pi - 20);
+        r(2,i) = R_c*2;
+    end
+        
+    
 end
 
-v(end) = v(N-1);
-p(end) = p(N-1);
 
 
 
@@ -170,29 +182,40 @@ subplot(2,2,1)
 plot(t,j,'r');
 hold on;
 title('Jerk')
+xlabel('s')
+ylabel('m/s^3')
+
 
 subplot(2,2,2)
 plot(t,a,'r');
 hold on;
 title('Acc')
+xlabel('s')
+ylabel('m/s^2')
+
 
 subplot(2,2,3)
 plot(t,v,'r');
 hold on;
 title('Vel')
+xlabel('s')
+ylabel('m/s')
 
 subplot(2,2,4)
 plot(t,p,'r');
 hold on;
 title('Pos')
- 
-% figure(2)
-% plot(r(1,:),r(2,:))
-% 
-% figure(3)
-% subplot(2,2,1)
-% plot(t,r(1,:))
-% subplot(2,2,2)
-% plot(t,r(2,:))
-% subplot(2,2,3)
-% plot(t,psi)
+xlabel('s')
+ylabel('m') 
+
+
+figure(2)
+plot(r(1,:),r(2,:))
+title('x - y')
+figure(3)
+subplot(2,2,1)
+plot(t,r(1,:))
+subplot(2,2,2)
+plot(t,r(2,:))
+subplot(2,2,3)
+plot(t,psi)
